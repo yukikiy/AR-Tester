@@ -13,26 +13,42 @@ struct ContentView : View {
         ARViewContainer().edgesIgnoringSafeArea(.all)
     }
 }
-
+//
 struct ARViewContainer: UIViewRepresentable {
-    
+    //Viewがレンダリングされる前に、Viewが依存するデータや状態を提供するために、コンテキスト(Context)が使用されます
     func makeUIView(context: Context) -> ARView {
         
         let arView = ARView(frame: .zero)
         
-        // Load the "Box" scene from the "Experience" Reality File
-        let boxAnchor = try! Experience.loadBox()
+        arView.addGestureRecognizer(UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap)))
+            //pass the arView to coordinator so that we can intaractive with arview
+            //contex.coordinatorは　Coordinatorプロトコルを利用するためのプロパティです。
+        context.coordinator.view = arView
+            //What is delegate and protocol? ->https://www.youtube.com/watch?v=ELRH8vkOlNs
+            //ARsessionオブジェクトはARKitが追跡するために使用するデバイスの位置や方向などの情報を提供する。下のコードはARsessionの
+            //delegateをcoordinatorに指定している
+        arView.session.delegate = context.coordinator
         
-        // Add the box anchor to the scene
-        arView.scene.anchors.append(boxAnchor)
+        //add anchor and models
+        let anchor = AnchorEntity(plane: .horizontal)
+        let box = ModelEntity(mesh: MeshResource.generateBox(size: 0.3), materials: [SimpleMaterial(color: .red, isMetallic: true)])
+        
+        anchor.addChild(box)
+        arView.scene.anchors.append(anchor)
         
         return arView
         
+    }
+    //create cordinator  makeCoordinator()はswiftはCoordinatorを作るためのテンプレメソッド
+    //CoordinatorはSwiftUIとRealityKitとのデータを受け渡しする
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
     }
     
     func updateUIView(_ uiView: ARView, context: Context) {}
     
 }
+
 
 #if DEBUG
 struct ContentView_Previews : PreviewProvider {
